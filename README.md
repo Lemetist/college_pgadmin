@@ -1,114 +1,175 @@
-Подготовка сервера
-1. Устанавливаем ansible:
+# Настройка Ansible для управления клиентскими машинами
 
+## Подготовка сервера
+
+### 1. Установка Ansible
+
+```bash
 apt-get install ansible
-2. Прописываем управляемые компьютеры в группу (local). В файл /etc/ansible/hosts требуется добавить (а в новых версиях Ansible желательно указать пользователя, под которым будет запущены команды на управляемых узлах (root)):
+```
 
+### 2. Добавление управляемых хостов
+
+Редактируем файл `/etc/ansible/hosts` и добавляем следующее содержимое:
+
+```
 [all:vars]
 ansible_user=root
 
 [local]
 10.10.3.77
-3. Так как управление будет осуществляться через ssh по ключам, создаём ключ SSH:
+```
 
+### 3. Создание SSH-ключа
+
+```bash
 ssh-keygen -t ed25519 -f ~/.ssh/manager
-Пароль ключа можно оставить пустым.
+```
 
-4. Добавить ключ на сервере:
+Парольную фразу можно оставить пустой.
 
+### 4. Добавление ключа в агент SSH
+
+```bash
 eval `ssh-agent`
 ssh-add ~/.ssh/manager
-5. Создадим каталог для пакетов рецептов (playbooks):
+```
 
+### 5. Создание каталога для плейбуков
+
+```bash
 mkdir -p /etc/ansible/playbooks
-Подготовка клиента
-1. Устанавливаем необходимые модули:
+```
 
+## Подготовка клиента
+
+### 1. Установка необходимых модулей
+
+```bash
 apt-get install python python-module-yaml python-module-jinja2 python-modules-json python-modules-distutils
-2. Включаем и запускаем службу sshd:
+```
 
-для SystemV:
+### 2. Включение и запуск службы SSH
 
+Для SystemV:
+
+```bash
 chkconfig sshd on
 service sshd start
-для SystemD:
+```
 
+Для SystemD:
+
+```bash
 systemctl enable sshd.service
 systemctl start sshd.service
-3. Размещаем публичную часть созданного на сервере ключа пользователю root (в модуле Администратор или вручную добавить содержимое файла manager.pub в /etc/openssh/authorized_keys/root.
+```
 
-4. Проверим доступ по ключу с сервера:
+### 3. Размещение публичного SSH-ключа
 
+Копируем публичный ключ на клиент:
+
+```bash
+ssh-copy-id -i ~/.ssh/manager.pub root@10.10.3.77
+```
+
+Или вручную добавляем содержимое `manager.pub` в файл `/root/.ssh/authorized_keys`.
+
+### 4. Проверка подключения
+
+```bash
 ssh root@10.10.3.77
-Проверка доступности
-Используем модуль «ping»:
+```
 
-# ansible -m ping local
+## Проверка доступности
+
+Проверяем связь с клиентом через Ansible:
+
+```bash
+ansible -m ping local
+```
+
+Пример успешного ответа:
+
+```json
 10.10.3.77 | SUCCESS => {
-    "changed": false, 
-    "failed": false, 
+    "changed": false,
     "ping": "pong"
 }
-Полезные рецепты
-Рецепты применяются командой:
+```
 
-ansible-playbook <имя файла>
-Прописывание репозитория
-Файл: /etc/ansible/playbooks/repo.yml
+## Полезные плейбуки
 
+### 1. Прописывание репозитория
+
+Файл: `/etc/ansible/playbooks/repo.yml`
+
+```yaml
 - hosts: local
   remote_user: root
-  tasks: 
+  tasks:
   - name: Remove all repositories
     shell: apt-repo rm all
   - name: Add official mirror
     shell: apt-repo add http://10.10.3.77/repo/p8
   - name: Add official mirror with arepo
     shell: apt-repo add 'rpm http://10.10.3.77/repo/p8 x86_64-i586 classic'
-  - name: Add extra repository 
+  - name: Add extra repository
     shell: apt-repo add 'rpm http://10.10.3.77/repo/extra x86_64 extra'
-Примечание: Используется модуль shell и программа apt-repo.
+```
 
+Запуск:
 
-Установка пакета
-Файл: /etc/ansible/playbooks/install-ifcplugin.yml
+```bash
+ansible-playbook /etc/ansible/playbooks/repo.yml
+```
 
+### 2. Установка пакета
+
+Файл: `/etc/ansible/playbooks/install-ifcplugin.yml`
+
+```yaml
 - hosts: local
   remote_user: root
   tasks:
   - name: Update cache and install ifcplugin
-    apt_rpm:
+    apt:
       name: ifcplugin
       state: present
       update_cache: yes
-Обновление системы
-С версии ansible-2.9.27-alt2 и ansible-core-2.14.2-alt1:
+```
 
+Запуск:
+
+```bash
+ansible-playbook /etc/ansible/playbooks/install-ifcplugin.yml
+```
+
+### 3. Обновление системы
+
+Файл: `/etc/ansible/playbooks/update_system.yml`
+
+```yaml
 - hosts: local
   remote_user: root
   gather_facts: no
   tasks:
   - name: Update cache
-    apt_rpm:
+    apt:
       update_cache: true
   - name: Upgrade system
-    apt_rpm:
-      dist_upgrade: true
+    apt:
+      upgrade: dist
   - name: Upgrade kernel
-    apt_rpm:
-      update_kernel: true
+    shell: apt-get install --only-upgrade linux-image-generic
   - name: Clean package cache
-    apt_rpm:
-      clean: true
-Или всё в одном:
+    apt:
+      autoclean: yes
+```
 
-- hosts: local
-  remote_user: root
-  gather_facts: no
-  tasks:
-  - name: Upgrade system
-    apt_rpm:
-      update_cache: true
-      dist_upgrade: true
-      update_kernel: true
-      clean: true
+Запуск:
+
+```bash
+ansible-playbook /etc/ansible/playbooks/update_system.yml
+```
+
