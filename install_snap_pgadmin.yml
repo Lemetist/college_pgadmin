@@ -1,0 +1,26 @@
+- hosts: local
+  remote_user: root
+  tasks:
+    - name: Install snapd
+      apt:
+        name: snapd
+        state: present
+        update_cache: yes
+
+    - name: Start snapd.socket
+      systemd:
+        name: snapd.socket
+        state: started
+        enabled: yes
+
+    - name: Add snap binary path to the system environment
+      lineinfile:
+        path: /etc/profile
+        line: 'export PATH="/var/lib/snapd/snap/bin:$PATH"'
+        create: yes
+
+    - name: Install pgAdmin4 using snap
+      command: snap install pgadmin4
+    
+    - name: Reboot
+      command: reboot 
