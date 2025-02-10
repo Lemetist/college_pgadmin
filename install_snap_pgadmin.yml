@@ -24,3 +24,10 @@
     
     - name: Reboot
       command: reboot 
+    
+    - name: Install posgresql-server
+      apt:
+        name: posgresql-server
+        stage: present
+        update_cache: yes
+        
