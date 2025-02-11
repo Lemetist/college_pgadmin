@@ -22,20 +22,30 @@
 
     - name: Install pgAdmin4 using snap
       command: snap install pgadmin4
-    
 
-    - name: Install posgresql-server
+    - name: Install postgresql-server
       apt:
-        name: postgresql16-server
-        stage: present
+        name: postgresql-16
+        state: present
         update_cache: yes
-        
-    - name: Init system database
+
+    - name: Init system database for PostgreSQL
       command: /etc/init.d/postgresql initdb
 
-    - name: service postgresql start
+    - name: Start and enable postgresql service
       systemd:
         name: postgresql
         state: started
         enabled: yes
-    
+
+    - name: Install MySQL-server
+      apt:
+        name: mysql-server
+        state: present
+        update_cache: yes
+
+    - name: Start and enable mysqld service
+      systemd:
+        name: mysqld
+        state: started
+        enabled: yes
