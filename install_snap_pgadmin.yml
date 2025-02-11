@@ -3,7 +3,7 @@
   remote_user: root
   tasks:
     - name: Install snapd
-      apt:
+      apt_rpm:
         name: snapd
         state: present
         update_cache: yes
@@ -24,7 +24,7 @@
       command: snap install pgadmin4
 
     - name: Install postgresql-server
-      apt:
+      apt_rpm:
         name: postgresql-16
         state: present
         update_cache: yes
@@ -39,7 +39,7 @@
         enabled: yes
 
     - name: Install MySQL-server
-      apt:
+      apt_rpm:
         name: mysql-server
         state: present
         update_cache: yes
