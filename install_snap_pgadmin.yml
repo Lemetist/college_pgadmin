@@ -1,4 +1,5 @@
 - hosts: local
+  become: yes
   remote_user: root
   tasks:
     - name: Install snapd
@@ -22,12 +23,19 @@
     - name: Install pgAdmin4 using snap
       command: snap install pgadmin4
     
-    - name: Reboot
-      command: reboot 
-    
+
     - name: Install posgresql-server
       apt:
-        name: posgresql-server
+        name: postgresql16-server
         stage: present
         update_cache: yes
         
+    - name: Init system database
+      command: /etc/init.d/postgresql initdb
+
+    - name: service postgresql start
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+    
