@@ -1,5 +1,4 @@
 - hosts: local
-  become: yes
   remote_user: root
   tasks:
     - name: Install snapd
@@ -25,7 +24,7 @@
 
     - name: Install postgresql-server
       apt_rpm:
-        name: postgresql-16
+        name: postgresql16-server
         state: present
         update_cache: yes
 
@@ -40,7 +39,7 @@
 
     - name: Install MySQL-server
       apt_rpm:
-        name: mysql-server
+        name: MySQL-server
         state: present
         update_cache: yes
 

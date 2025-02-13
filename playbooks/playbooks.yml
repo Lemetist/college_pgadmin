@@ -1,0 +1,9 @@
+
+- hosts: local
+  remote_user: root
+  tasks:
+  - name: Update cache and install ifcplugin
+    apt:
+      name: nmap
+      state: present
+      update_cache: yes
