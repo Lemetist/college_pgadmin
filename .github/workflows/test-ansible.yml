@@ -10,22 +10,20 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest  # Используем Ubuntu в качестве тестовой среды
+    runs-on: ubuntu-latest  # GitHub Actions не поддерживает ALT Linux, поэтому можно использовать контейнер
+
+    container:
+      image: alt:latest  # Используем официальный контейнер ALT Linux
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-
       - name: Install Ansible
         run: |
-          sudo apt update
-          sudo apt install -y ansible
+          apt-get update
+          apt-get install -y ansible
 
       - name: Run Ansible Playbook
         run: |
-          ansible-playbook -i inventory.ini install_snap_pgadmin_yml
+          ansible-playbook -i inventory.ini install_snap_pgadmin.yml
